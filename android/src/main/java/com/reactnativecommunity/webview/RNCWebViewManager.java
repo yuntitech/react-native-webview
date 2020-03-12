@@ -735,7 +735,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         webView,
         new TopLoadingStartEvent(
           webView.getId(),
-          createWebViewEvent(webView, url)));
+          createWebViewEvent(webView, url, true)));
     }
 
     @Override
@@ -807,12 +807,17 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     }
 
     protected WritableMap createWebViewEvent(WebView webView, String url) {
+      return createWebViewEvent(webView, url,
+        !mLastLoadFailed && webView.getProgress() != 100);
+    }
+
+    private WritableMap createWebViewEvent(WebView webView, String url, boolean loading) {
       WritableMap event = Arguments.createMap();
       event.putDouble("target", webView.getId());
       // Don't use webView.getUrl() here, the URL isn't updated to the new value yet in callbacks
       // like onPageFinished
       event.putString("url", url);
-      event.putBoolean("loading", !mLastLoadFailed && webView.getProgress() != 100);
+      event.putBoolean("loading", loading);
       event.putString("title", webView.getTitle());
       event.putBoolean("canGoBack", webView.canGoBack());
       event.putBoolean("canGoForward", webView.canGoForward());
