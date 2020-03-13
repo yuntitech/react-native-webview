@@ -613,6 +613,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         if (args == null) {
           throw new RuntimeException("Arguments for loading an url are null!");
         }
+
         String url = args.getString(0);
         if (url != null && !url.equals(activeUrl)) {
           root.loadUrl(url);
