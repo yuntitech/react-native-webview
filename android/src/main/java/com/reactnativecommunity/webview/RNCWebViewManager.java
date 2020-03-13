@@ -71,6 +71,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -466,10 +467,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           }
         }
         view.loadUrl(url, headerMap);
-        return;
       }
     }
-    view.loadUrl(BLANK_URL);
   }
 
   @ReactProp(name = "onContentSizeChange")
@@ -525,6 +524,13 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   @ReactProp(name = "onScroll")
   public void setOnScroll(WebView view, boolean hasScrollEvent) {
     ((RNCWebView) view).setHasScrollEvent(hasScrollEvent);
+  }
+
+  @ReactProp(name = "nativeScreen")
+  public void setNativeScreen(WebView view, ReadableArray nativeScreen) {
+    if (nativeScreen != null) {
+      ((RNCWebView) view).setNativeScreenList(nativeScreen.toArrayList());
+    }
   }
 
   @Override
@@ -746,7 +752,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         new TopShouldStartLoadWithRequestEvent(
           view.getId(),
           createWebViewEvent(view, url)));
-      return true;
+      return ((RNCWebView) view).isNativeScreen(url);
     }
 
 
@@ -987,6 +993,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     protected boolean sendContentSizeChangeEvents = false;
     private OnScrollDispatchHelper mOnScrollDispatchHelper;
     protected boolean hasScrollEvent = false;
+    private List<Object> mNativeScreenList;
 
     /**
      * WebView must be created with an context of the current activity
@@ -996,6 +1003,16 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
      */
     public RNCWebView(ThemedReactContext reactContext) {
       super(reactContext);
+    }
+
+    public void setNativeScreenList(List<Object> nativeScreenList) {
+      mNativeScreenList = nativeScreenList;
+    }
+
+    public boolean isNativeScreen(String url) {
+      Uri uri = Uri.parse(url);
+      String type = uri.getQueryParameter("_appbiz");
+      return mNativeScreenList != null && mNativeScreenList.contains(type);
     }
 
     public void setSendContentSizeChangeEvents(boolean sendContentSizeChangeEvents) {
