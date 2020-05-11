@@ -32,6 +32,7 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.common.build.ReactBuildConfig;
 import com.facebook.react.module.annotations.ReactModule;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerModule;
@@ -124,6 +125,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   protected static final String HTML_MIME_TYPE = "text/html";
   protected static final String JAVASCRIPT_INTERFACE = "ReactNativeWebView";
   protected static final String HTTP_METHOD_POST = "POST";
+  private static final String EVENT_JS_CALLBACK = "onJsCallback";
   // Use `webView.loadUrl("about:blank")` to reliably reset the view
   // state and release page resources (including any running JavaScript).
   protected static final String BLANK_URL = "about:blank";
@@ -549,6 +551,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     export.put(TopShouldStartLoadWithRequestEvent.EVENT_NAME, MapBuilder.of("registrationName", "onShouldStartLoadWithRequest"));
     export.put(ScrollEventType.getJSEventName(ScrollEventType.SCROLL), MapBuilder.of("registrationName", "onScroll"));
     export.put(TopHttpErrorEvent.EVENT_NAME, MapBuilder.of("registrationName", "onHttpError"));
+    export.put(TopHttpErrorEvent.EVENT_NAME, MapBuilder.of("registrationName", "onHttpError"));
+
     return export;
   }
 
@@ -590,7 +594,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           RNCWebView reactWebView = (RNCWebView) root;
           JSONObject eventInitDict = new JSONObject();
           eventInitDict.put("data", args.getString(0));
-          reactWebView.evaluateJavascriptWithFallback("(function () {" +
+          reactWebView.evaluateJavascriptWithFallback(root, "(function () {" +
             "var event;" +
             "var data = " + eventInitDict.toString() + ";" +
             "try {" +
@@ -607,7 +611,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         break;
       case COMMAND_INJECT_JAVASCRIPT:
         RNCWebView reactWebView = (RNCWebView) root;
-        reactWebView.evaluateJavascriptWithFallback(args.getString(0));
+        reactWebView.evaluateJavascriptWithFallback(root, args.getString(0));
         break;
       case COMMAND_LOAD_URL:
         if (args == null) {
@@ -731,7 +735,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       if (!mLastLoadFailed) {
         RNCWebView reactWebView = (RNCWebView) webView;
 
-        reactWebView.callInjectedJavaScript();
+        reactWebView.callInjectedJavaScript(reactWebView);
 
         emitFinishEvent(webView, url);
       }
@@ -1095,9 +1099,9 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       }
     }
 
-    protected void evaluateJavascriptWithFallback(String script) {
+    protected void evaluateJavascriptWithFallback(WebView webView, String script) {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-        evaluateJavascript(script, null);
+        evaluateJavascript(script, value -> emitEvaluateJsEvent(webView, value));
         return;
       }
 
@@ -1109,11 +1113,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       }
     }
 
-    public void callInjectedJavaScript() {
+    public void callInjectedJavaScript(WebView webView) {
       if (getSettings().getJavaScriptEnabled() &&
         injectedJS != null &&
         !TextUtils.isEmpty(injectedJS)) {
-        evaluateJavascriptWithFallback("(function() {\n" + injectedJS + ";\n})();");
+        evaluateJavascriptWithFallback(webView, "(function() {\n" + injectedJS + ";\n})();");
       }
     }
 
@@ -1163,6 +1167,16 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
           this.getHeight());
 
         dispatchEvent(this, event);
+      }
+    }
+
+    private void emitEvaluateJsEvent(WebView webView, String value) {
+      if (value != null) {
+        WritableMap data = Arguments.createMap();
+        data.putString("value", value);
+        ReactContext context = (ReactContext) webView.getContext();
+        context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+          .emit(EVENT_JS_CALLBACK, data);
       }
     }
 
