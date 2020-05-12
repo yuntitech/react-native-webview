@@ -1101,7 +1101,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
     protected void evaluateJavascriptWithFallback(WebView webView, String script) {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-        evaluateJavascript(script, value -> emitEvaluateJsEvent(webView, value));
+        evaluateJavascript(script, value -> emitEvaluateJsEvent(webView, script, value));
         return;
       }
 
@@ -1170,10 +1170,11 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       }
     }
 
-    private void emitEvaluateJsEvent(WebView webView, String value) {
+    private void emitEvaluateJsEvent(WebView webView, String script, String value) {
       if (value != null) {
         WritableMap data = Arguments.createMap();
         data.putString("value", value);
+        data.putString("script", script);
         ReactContext context = (ReactContext) webView.getContext();
         context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
           .emit(EVENT_JS_CALLBACK, data);
