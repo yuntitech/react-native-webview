@@ -63,6 +63,7 @@
 + (void)setCustomCertificatesForHost:(nullable NSDictionary *)certificates;
 - (void)postMessage:(NSString *_Nullable)message;
 - (void)injectJavaScript:(NSString *_Nullable)script;
+- (void)injectJavaScript:(NSString *_Nullable)script callback:(void (^_Nonnull)(NSString*_Nullable))callback;
 - (void)goForward;
 - (void)goBack;
 - (void)reload;

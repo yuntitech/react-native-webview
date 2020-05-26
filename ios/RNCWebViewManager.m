@@ -130,7 +130,14 @@ RCT_EXPORT_METHOD(injectJavaScript:(nonnull NSNumber *)reactTag script:(NSString
     if (![view isKindOfClass:[RNCWebView class]]) {
       RCTLogError(@"Invalid view returned from registry, expecting RNCWebView, got: %@", view);
     } else {
-      [view injectJavaScript:script];
+      __weak typeof(self) wself = self;
+      [view injectJavaScript:script callback:^(NSString * value) {
+        NSString *event = @"cn.bookln.onJsCallback";
+        NSMutableDictionary *body = [NSMutableDictionary dictionaryWithCapacity:2];
+        [body setValue:script forKey:@"script"];
+        [body setValue:value forKey:@"value"];
+        [wself.bridge.eventDispatcher sendDeviceEventWithName:event body:body.copy];
+      }];
     }
   }];
 }
