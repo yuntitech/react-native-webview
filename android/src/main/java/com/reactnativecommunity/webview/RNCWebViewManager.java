@@ -125,7 +125,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   protected static final String HTML_MIME_TYPE = "text/html";
   protected static final String JAVASCRIPT_INTERFACE = "ReactNativeWebView";
   protected static final String HTTP_METHOD_POST = "POST";
-  private static final String EVENT_JS_CALLBACK = "onJsCallback";
+  private static final String EVENT_JS_CALLBACK = "cn.bookln.onJsCallback";
   // Use `webView.loadUrl("about:blank")` to reliably reset the view
   // state and release page resources (including any running JavaScript).
   protected static final String BLANK_URL = "about:blank";
