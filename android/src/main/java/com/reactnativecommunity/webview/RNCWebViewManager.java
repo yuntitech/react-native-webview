@@ -6,6 +6,7 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
@@ -150,7 +151,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   }
 
   protected static void dispatchEvent(WebView webView, Event event) {
-    ReactContext reactContext = (ReactContext) webView.getContext();
+    ReactContext reactContext = ((RNCWebView) webView).getReactContext();
     EventDispatcher eventDispatcher =
       reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
     eventDispatcher.dispatchEvent(event);
@@ -506,7 +507,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     WebView view,
     @Nullable Boolean allowsFullscreenVideo) {
     mAllowsFullscreenVideo = allowsFullscreenVideo != null && allowsFullscreenVideo;
-    setupWebChromeClient((ReactContext) view.getContext(), view);
+    setupWebChromeClient(((RNCWebView) view).getReactContext(), view);
   }
 
   @ReactProp(name = "allowFileAccess")
@@ -643,7 +644,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   public void onDropViewInstance(WebView webView) {
     super.onDropViewInstance(webView);
     activeUrl = null;
-    ((ThemedReactContext) webView.getContext()).removeLifecycleEventListener((RNCWebView) webView);
+    ((RNCWebView) webView).getReactContext().removeLifecycleEventListener((RNCWebView) webView);
     ((RNCWebView) webView).cleanupCallbacksAndDestroy();
   }
 
@@ -1003,6 +1004,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
     private OnScrollDispatchHelper mOnScrollDispatchHelper;
     protected boolean hasScrollEvent = false;
     private List<Object> mNativeScreenList;
+    private ReactContext mReactContext;
 
     /**
      * WebView must be created with an context of the current activity
@@ -1011,7 +1013,12 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
      * Reactive Native needed for access to ReactNative internal system functionality
      */
     public RNCWebView(ThemedReactContext reactContext) {
-      super(reactContext);
+      super(getFixedContext(reactContext));
+      this.mReactContext = reactContext;
+    }
+
+    public ReactContext getReactContext() {
+      return mReactContext;
     }
 
     public void setNativeScreenList(List<Object> nativeScreenList) {
@@ -1175,7 +1182,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         WritableMap data = Arguments.createMap();
         data.putString("value", value);
         data.putString("script", script);
-        ReactContext context = (ReactContext) webView.getContext();
+        ReactContext context = ((RNCWebView) webView).getReactContext();
         context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
           .emit(EVENT_JS_CALLBACK, data);
       }
@@ -1202,5 +1209,15 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         mContext.onMessage(message);
       }
     }
+
+    private static Context getFixedContext(Context context) {
+      // Android Lollipop 5.0 & 5.1
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+        && Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+        return context.createConfigurationContext(new Configuration());
+      }
+      return context;
+    }
+
   }
 }
