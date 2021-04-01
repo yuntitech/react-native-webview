@@ -29,7 +29,6 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.PermissionAwareActivity;
 import com.facebook.react.modules.core.PermissionListener;
-import com.tencent.smtt.sdk.QbSdk;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +71,6 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
   public RNCWebViewModule(ReactApplicationContext reactContext) {
     super(reactContext);
     reactContext.addActivityEventListener(this);
-    initX5Environment();
   }
 
   @Override
@@ -419,20 +417,4 @@ public class RNCWebViewModule extends ReactContextBaseJavaModule implements Acti
     }
     return (PermissionAwareActivity) activity;
   }
-
-  private void initX5Environment() {
-    QbSdk.PreInitCallback cb = new QbSdk.PreInitCallback() {
-
-      @Override
-      public void onViewInitFinished(boolean arg0) {
-        //x5內核初始化完成的回调，为true表示x5内核加载成功，否则表示x5内核加载失败，会自动切换到系统内核。
-      }
-
-      @Override
-      public void onCoreInitFinished() {
-      }
-    };
-      //x5内核初始化接口
-      QbSdk.initX5Environment(getReactApplicationContext(), cb);
-    }
 }
